@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import NotificationBanner from './components/NotificationBanner';
 import ProductCatalog from './components/ProductCatalog';
@@ -6,8 +6,6 @@ import ReservationTimer from './components/ReservationTimer';
 import CartSidebar from './components/CartSidebar';
 import OrderHistory from './components/OrderHistory';
 
-// Prepend VITE_API_BASE_URL for production (Vercel) with fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export default function App() {
   const [products, setProducts] = useState([]);
@@ -23,7 +21,6 @@ export default function App() {
     fetchOrders();
   }, []);
 
-  // 5-minute stock reservation countdown timer
   useEffect(() => {
     let interval = null;
     if (activeOrder && activeOrder.status === 'RESERVED' && timer > 0) {
@@ -42,7 +39,7 @@ export default function App() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/`);
+      const res = await fetch('/api/products/');
       if (res.ok) setProducts(await res.json());
     } catch (err) {
       console.error("Failed to fetch products:", err);
@@ -51,7 +48,7 @@ export default function App() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/`);
+      const res = await fetch('/api/orders/');
       if (res.ok) setOrders(await res.json());
     } catch (err) {
       console.error("Failed to fetch orders:", err);
@@ -93,7 +90,7 @@ export default function App() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/checkout`, {
+      const res = await fetch('/api/orders/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,7 +120,7 @@ export default function App() {
     setMessage(null);
     try {
       const idempotencyKey = `PAY-${activeOrder.id}-${Date.now()}`;
-      const res = await fetch(`${API_BASE_URL}/api/payments/process`, {
+      const res = await fetch('/api/payments/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,7 +132,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Payment failed');
 
-      setMessage({ type: 'success', text: `Payment Processed: ${outcome}` });
+      setMessage({ type: outcome === 'SUCCESS' ? 'success' : 'error', text: `Payment Outcome: ${outcome}` });
       setActiveOrder(null);
       fetchProducts();
       fetchOrders();
@@ -146,35 +143,21 @@ export default function App() {
     }
   };
 
-  const handleAutoExpire = async () => {
-    if (!activeOrder) return;
-    try {
-      await fetch(`${API_BASE_URL}/api/payments/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: activeOrder.id,
-          idempotency_key: `EXPIRE-${activeOrder.id}-${Date.now()}`,
-          simulated_outcome: 'TIMEOUT',
-        }),
-      });
-      setMessage({ type: 'error', text: 'Stock reservation expired after 5 minutes.' });
-      setActiveOrder(null);
-      fetchProducts();
-      fetchOrders();
-    } catch (err) {
-      console.error("Failed to auto-expire order:", err);
-    }
+  const handleAutoExpire = () => {
+    setMessage({ type: 'error', text: 'Stock reservation expired! Items returned to inventory.' });
+    setActiveOrder(null);
+    fetchProducts();
+    fetchOrders();
   };
 
-  const formatTimer = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  const formatTimer = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   return (
-    <div className="min-h-screen bg-[#E5E5E5] p-6 text-[#000000]">
+    <div className="min-h-screen  bg-[#E5E5E5] p-6 text-[#000000]">
       <Header onRefresh={() => { fetchProducts(); fetchOrders(); }} />
       <NotificationBanner message={message} />
 
