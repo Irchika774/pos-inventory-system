@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://backend-three-eta-20.vercel.app/',
+        target: 'https://backend-self-five-15.vercel.app/',
         changeOrigin: true
       }
     }
