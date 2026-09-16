@@ -1,3 +1,8 @@
+# Dependencies & Node modules
+node_modules/
+dist/
+dist-ssr/
+
 # Byte-compiled / cache files
 __pycache__/
 *.py[cod]
@@ -12,10 +17,17 @@ env/
 # Testing cache
 .pytest_cache/
 
-# Databases
+# Databases & local data files
 *.db
 *.sqlite3
-database.py
 
-# Environment variables
+# Environment variables & secrets
 .env
+*.env
+.env.local
+
+# Vercel & IDE artifacts
+.vercel
+.vscode/
+.idea/
+.DS_Store
